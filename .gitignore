@@ -14,3 +14,7 @@ build
 
 # Mac
 .DS_Store
+/bin/
+
+# Other
+.*

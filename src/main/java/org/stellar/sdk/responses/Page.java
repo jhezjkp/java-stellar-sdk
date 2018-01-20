@@ -1,78 +1,91 @@
 package org.stellar.sdk.responses;
 
-import com.google.gson.annotations.SerializedName;
-import com.google.gson.reflect.TypeToken;
-
-import org.apache.http.client.fluent.Request;
-import org.stellar.sdk.requests.ResponseHandler;
+import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
+import org.apache.http.client.fluent.Request;
+import org.stellar.sdk.requests.ResponseHandler;
+
+import com.google.gson.annotations.SerializedName;
+import com.google.gson.reflect.TypeToken;
+
 /**
  * Represents page of objects.
- * @see <a href="https://www.stellar.org/developers/horizon/reference/resources/page.html" target="_blank">Page documentation</a>
+ * 
+ * @see <a href=
+ *      "https://www.stellar.org/developers/horizon/reference/resources/page.html"
+ *      target="_blank">Page documentation</a>
  */
-public class Page<T> extends Response {
-  @SerializedName("records")
-  private ArrayList<T> records;
-  @SerializedName("links")
-  private Links links;
+public class Page<T> extends Response implements TypedResponse<T> {
+	@SerializedName("records")
+	private ArrayList<T> records;
+	@SerializedName("links")
+	private Links links;
 
-  Page() {}
+	private TypeToken<T> type;
 
-  public ArrayList<T> getRecords() {
-    return records;
-  }
+	Page() {
+	}
 
-  public Links getLinks() {
-    return links;
-  }
+	public ArrayList<T> getRecords() {
+		return records;
+	}
 
-  /**
-   * @return The next page of results or null when there is no more results
-   * @throws URISyntaxException
-   * @throws IOException
-   */
-  public Page<T> getNextPage() throws URISyntaxException, IOException {
-    if (this.getLinks().getNext() == null) {
-      return null;
-    }
-    TypeToken type = new TypeToken<Page<T>>() {};
-    ResponseHandler<Page<T>> responseHandler = new ResponseHandler<Page<T>>(type);
-    URI uri = new URI(this.getLinks().getNext().getHref());
-    return (Page<T>) Request.Get(uri).execute().handleResponse(responseHandler);
-  }
+	public Links getLinks() {
+		return links;
+	}
 
-  /**
-   * Links connected to page response.
-   */
-  public static class Links {
-    @SerializedName("next")
-    private final Link next;
-    @SerializedName("prev")
-    private final Link prev;
-    @SerializedName("self")
-    private final Link self;
+	/**
+	 * @return The next page of results or null when there is no more results
+	 * @throws URISyntaxException
+	 * @throws IOException
+	 */
+	public Page<T> getNextPage() throws URISyntaxException, IOException {
+		if (this.getLinks().getNext() == null) {
+			return null;
+		}
+		TypeToken type = requireNonNull(this.type);
+		ResponseHandler<Page<T>> responseHandler = new ResponseHandler<Page<T>>(type);
+		URI uri = new URI(this.getLinks().getNext().getHref());
+		return (Page<T>) Request.Get(uri).execute().handleResponse(responseHandler);
+	}
 
-    Links(Link next, Link prev, Link self) {
-      this.next = next;
-      this.prev = prev;
-      this.self = self;
-    }
+	@Override
+	public void setType(TypeToken<T> type) {
+		this.type = type;
+	}
 
-    public Link getNext() {
-      return next;
-    }
+	/**
+	 * Links connected to page response.
+	 */
+	public static class Links {
+		@SerializedName("next")
+		private final Link next;
+		@SerializedName("prev")
+		private final Link prev;
+		@SerializedName("self")
+		private final Link self;
 
-    public Link getPrev() {
-      return prev;
-    }
+		Links(Link next, Link prev, Link self) {
+			this.next = next;
+			this.prev = prev;
+			this.self = self;
+		}
 
-    public Link getSelf() {
-      return self;
-    }
-  }
+		public Link getNext() {
+			return next;
+		}
+
+		public Link getPrev() {
+			return prev;
+		}
+
+		public Link getSelf() {
+			return self;
+		}
+	}
 }
